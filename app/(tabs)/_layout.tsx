@@ -46,7 +46,7 @@ export default function TabLayout() {
           title: 'Profile',
           headerShown: true,
           headerRight: () => (
-            <Link href="/pages/SettingsScreen" style={{ marginRight: 15 }}>
+            <Link href="../SettingsScreen" style={{ marginRight: 15 }}>
               <Ionicons name="settings-outline" size={24} color="#390000" />
             </Link>
           ),

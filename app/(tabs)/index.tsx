@@ -9,11 +9,13 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router'; // For navigation
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('For you');
   const [events, setEvents] = useState([]); // State to hold API data
   const [loading, setLoading] = useState(true); // State for loading indicator
+  const router = useRouter(); // Use router for navigation
 
   useEffect(() => {
     // Fetch data from API
@@ -60,8 +62,22 @@ export default function HomeScreen() {
         <ActivityIndicator size="large" color="#6B3B24" style={styles.loader} />
       ) : (
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          {events.map((event: any, index: number) => (
-            <View key={event.event_id} style={styles.eventCard}>
+          {events.map((event: any) => (
+            <TouchableOpacity
+              key={event.event_id}
+              style={styles.eventCard}
+              onPress={() =>
+                router.push({
+                  pathname: '../EventScreen', 
+                  params: {
+                    event_id: event.event_id,
+                    event_name: event.event_name,
+                    event_date: event.event_date,
+                    event_price: event.event_price,
+                  },
+                })
+              }
+            >
               <Image
                 source={{ uri: 'https://via.placeholder.com/150' }} // Replace with actual image URLs if available
                 style={styles.eventImage}
@@ -75,7 +91,7 @@ export default function HomeScreen() {
                     : 'Free'}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
