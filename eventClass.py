@@ -76,7 +76,7 @@ class Event:
                 "Status" : self.eventStatus, 
                 "Organizer": self.orgEmail
             }
-            return jsonify(event_info)
+            return event_info
         
         # In case event data is missing or not found
         return jsonify({"error": "Event not found"}), 404  # Optional error response with status code

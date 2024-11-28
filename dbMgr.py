@@ -15,7 +15,7 @@ class dbMgr:
 
     # Methods for Event-related queries
     def search_events(self, search_term):
-        query = "SELECT * FROM events WHERE name LIKE %s OR description LIKE %s"
+        query = "SELECT * FROM appEvents WHERE name LIKE %s OR description LIKE %s"
         values = (f"%{search_term}%", f"%{search_term}%")
         cursor = self.db.cursor(dictionary=True)
         cursor.execute(query, values)
