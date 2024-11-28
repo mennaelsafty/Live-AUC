@@ -3,6 +3,7 @@ from flask_cors import CORS
 from db import get_connection
 from eventClass import Event
 from studentClass import Student
+from dbMgr import dbMgr
 from datetime import datetime
 from oauthlib.oauth2 import WebApplicationClient
 import requests
@@ -46,11 +47,14 @@ def load_user_events(userEmail):
     # Get the list of attended events for the user
     attended_events = student.load_attended_events()
 
-    # Optionally, close the connection after the operation is complete
-    student.close_connection()
+    events = []
 
-    # Return the attended events as a JSON response
-    return jsonify(attended_events)
+    for event in attended_events:
+        eventInst = Event(event)
+        eventInfo = eventInst.loadEvent()
+        events.append(eventInfo)
+
+    return jsonify(events)
 
 
 # Returns list of all available events for homepage 
@@ -112,7 +116,7 @@ def load_event_details(event_id):
     eventInfo = event.loadEvent()
 
     # Optionally, close the connection after the operation is complete
-    event.close_connection()
+    # event.close_connection()
 
     # Return the attended events as a JSON response
     return jsonify(eventInfo)
@@ -251,6 +255,13 @@ def get_user_info():
     if 'user_info' in session:
         return jsonify(session['user_info'])
     return jsonify({"error": "No user is logged in"}), 401
+
+db_manager = dbMgr(get_connection)
+@app.route('/api/search/<string:searchTerm>', methods=['GET'])
+def search(searchTerm):
+    results = dbMgr.search_events(searchTerm)
+    return jsonify(results)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
