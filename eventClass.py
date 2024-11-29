@@ -103,9 +103,6 @@ class Event:
             self.connection.close()
             print("MySQL connection is closed")
 
-
-
-    
    
 class ImageType:
     def __init__(self, png, jpg, bmp, svg):
