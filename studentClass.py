@@ -1,6 +1,6 @@
 # User class 
 
-# testfile = "C:\Users\Haya\Desktop\Live@AUC\Live-AUC\test.txt"
+from mysql.connector import Error
 
 # Using database connection
 from db import get_connection
@@ -60,7 +60,7 @@ class Student:
             self.Following = 0
             self.Major = None
             self.Phone = None
-        
+   
     # Method to return the user's profile information as a JSON response
     def loadPInfo(self):
          # Check if user data is available
@@ -79,9 +79,8 @@ class Student:
         # In case user data is missing or not found
         return jsonify({"error": "User not found"}), 404  # Optional error response with status code
     
-
-    
      # Separate method to load the user's attended events
+    
     def load_attended_events(self):
         # Check if the connection exists
         if self.connection:
@@ -100,55 +99,61 @@ class Student:
     # authentication function - merna 
     def login(self):
         pass
+
+    def isFirstLog(self, userEmail):
+        sql_insert_query = """SELECT * FROM users WHERE email = %s"""
+        data_to_insert = (userEmail,)
+
+        self.cursor.execute(sql_insert_query, data_to_insert)
+
+        # Fetch the result of the query
+        result = self.cursor.fetchone()
+
+        if result is None: 
+            return "User not found: first login"  
+        else: 
+            return "User found: NOT first login"
+        
+     # Inserts user's info (first time login)
     
-    # # Gets username from the addUsername function and inserts it into user table in app database 
-    # def insertUsername(self, userName):
-    #     sql_insert_query = """INSERT INTO users (userName) VALUES (%s, %s)"""
-    #     data_to_insert = (userName)
+    def insertUserInfo(self, userEmail, fName, lName, major, phoneNo):
+        userName = userEmail.split('@')[0] 
 
-    #     try:
-    #         self.cursor.execute(sql_insert_query, data_to_insert)
-    #         self.connection.commit()
-    #         print("Record inserted successfully")
-    #     except Error as e:
-    #         print("Failed to insert record into MySQL table:", e)
+        pfp = "https://media.istockphoto.com/id/2181878439/fi/vektori/py%C3%B6re%C3%A4-harmaa-k%C3%A4ytt%C3%A4j%C3%A4kuvake-tummanharmaa-siluetti-vaaleamman-ympyr%C3%A4n-sis%C3%A4ll%C3%A4.jpg?s=1024x1024&w=is&k=20&c=1lDFT0XJYUui3iKcX8MZx6n1EphTrb6-Rvkyffwem-Q="
 
+        sql_insert_query = """INSERT INTO users (email, userName, Fname, Lname, major, friends, pfp, userPassword, phone, points, following) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        data_to_insert = (userEmail, userName, fName, lName, major, 0, pfp, "None", phoneNo, 0, 0)
 
-    # def updateUsername(self, userName, email):
-    #     """Update a specific column value in the database."""
-    #     sql_update_query = """UPDATE users SET userName = %s WHERE email = %s"""
-    #     data_to_update = (userName, email)
+        try:
+            self.cursor.execute(sql_insert_query, data_to_insert)
+            self.connection.commit()
+            return "Record updated successfully", 200  # Return success message with status code
+        except Error as e:
+            return f"Error while updating record: {e}", 500  # Return error message with status code
 
-    #     try:
-    #         self.cursor.execute(sql_update_query, data_to_update)
-    #         self.connection.commit()
-    #         print("Record updated successfully")
-    #     except Error as e:
-    #         print("Error while updating record:", e)
+    def updateUsername(self, userName, email):
+        """Update a specific column value in the database."""
+        sql_update_query = """UPDATE users SET userName = %s WHERE email = %s"""
+        data_to_update = (userName, email)
 
+        try:
+            self.cursor.execute(sql_update_query, data_to_update)
+            self.connection.commit()
+            return "Record updated successfully", 200  # Return success message with status code
+        except Error as e:
+            return f"Error while updating record: {e}", 500  # Return error message with status code
 
-    # def updatePFP(self, pfp, email):
-    #     """Update a specific column value in the database."""
-    #     sql_update_query = """UPDATE users SET column_name = %s WHERE id = %s"""
-    #     data_to_update = (pfp, email)
+    def updatePFP(self, pfp, email):
+        """Update a specific column value in the database."""
+        sql_update_query = """UPDATE users SET column_name = %s WHERE id = %s"""
+        data_to_update = (pfp, email)
 
-    #     try:
-    #         self.cursor.execute(sql_update_query, data_to_update)
-    #         self.connection.commit()
-    #         print("Record updated successfully")
-    #     except Error as e:
-    #         print("Error while updating record:", e)
-
-
-    # # Parses username from user email returned from authentication service 
-    # def addUsername(self, email):
-    #     # Setting email and username for user 
-    #     Email = email
-    #     Name = email.split('@')[0] 
-
-    #     # Writing email and username to user table in app database 
-    #     self.insertUsername(Name)
-
+        try:
+            self.cursor.execute(sql_update_query, data_to_update)
+            self.connection.commit()
+            print("Record updated successfully")
+        except Error as e:
+            print("Error while updating record:", e)
 
     # Not implemented for sprint 1 
     def saveEvent(self):
@@ -157,7 +162,6 @@ class Student:
     # Not implemented for sprint 1
     def AddFriend(self):
         pass
-    
     
     # Not implemented for sprint 1 
     def ReportUser(self):
