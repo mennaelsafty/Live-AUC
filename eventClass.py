@@ -19,7 +19,7 @@ class Event:
             self.cursor = self.connection.cursor()
 
             # SQL query to fetch the event's info from the database
-            sql_query = """SELECT eventName, Audience, Price, eventDesc, Organizer_email, eventStatus, DatenTime FROM appEvents WHERE event_id = %s"""
+            sql_query = """SELECT eventName, Audience, Price, eventDesc, Organizer_email, eventStatus, DatenTime, displayPic FROM appEvents WHERE event_id = %s"""
             self.cursor.execute(sql_query, (self.__eventID,))  # Execute the query with the provided id
             event_data = self.cursor.fetchone()  # Fetch the result as a single row
 
@@ -36,6 +36,7 @@ class Event:
                 self.orgEmail = event_data[4]  # (fifth column)
                 self.eventStatus = event_data[5]   # (sixth column)
                 self.datenTime = event_data[6]   # (seventh column)
+                self.displayPic = event_data[7] 
             
             else:
                 # If the event is not found, handle the case by assigning default values
@@ -46,6 +47,7 @@ class Event:
                 self.orgEmail = None 
                 self.eventStatus = None 
                 self.datenTime = None  
+                self.displayPic = None 
 
         else:
              # If the connection fails, set all attributes to None or default values
@@ -57,6 +59,7 @@ class Event:
             self.orgEmail = None 
             self.eventStatus = None 
             self.datenTime = None 
+            self.displayPic = None 
 
 
     # Not implemented in sprint 1
@@ -74,7 +77,8 @@ class Event:
                 "Audience": self.Audience,
                 "DateTime": self.datenTime, 
                 "Status" : self.eventStatus, 
-                "Organizer": self.orgEmail
+                "Organizer": self.orgEmail,
+                "displayPic": self.displayPic
             }
             return event_info
         

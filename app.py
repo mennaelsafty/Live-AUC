@@ -1,13 +1,19 @@
 from flask import Flask, jsonify, request, redirect, session
 from flask_cors import CORS
 from db import get_connection
+from dbMgr import dbMgr
 from eventClass import Event
 from studentClass import Student
-from dbMgr import dbMgr
 from datetime import datetime
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 import os
+
+# 'host': 'bkuitdpmiddscdp4bt05-mysql.services.clever-cloud.com',
+#     'database': 'bkuitdpmiddscdp4bt05',
+#     'user': 'uauhuir1bdzbqxy1',
+#     'password': 'm4vFPm9LNLuAf0ZpBHpr',
+#     'port': 3306
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)  # Enables credentials over CORS
@@ -46,28 +52,26 @@ def load_user_events(userEmail):
 
     # Get the list of attended events for the user
     attended_events = student.load_attended_events()
-
+    
     events = []
 
     for event in attended_events:
         eventInst = Event(event)
         eventInfo = eventInst.loadEvent()
         events.append(eventInfo)
-
     return jsonify(events)
 
 
-# Returns list of all available events for homepage 
 def listEvents():
-   # Establish a database connection
+    # Establish a database connection
     connection = get_connection()  # Assuming get_connection() returns a valid connection object
     
     if connection:
         try:
             cursor = connection.cursor()  # Create a cursor object to interact with the database
 
-            # SQL query to fetch all events from the appEvents table
-            sql_query = """SELECT event_id, eventName, DatenTime, Price FROM appEvents"""
+            # SQL query to fetch all events, including the displayPic column
+            sql_query = """SELECT event_id, eventName, DatenTime, Price, displayPic FROM appEvents"""
             cursor.execute(sql_query)  # Execute the query
             event_data = cursor.fetchall()  # Fetch all the events from the database 
 
@@ -79,12 +83,13 @@ def listEvents():
             # Print the fetched data for debugging
             print("Fetched event data:", event_data)
 
-           # If events are found, return them in a list of dictionaries
+            # If events are found, return them in a list of dictionaries
             events = [{
                 "event_id": event[0],
                 "event_name": event[1],
                 "event_date": event[2].strftime('%Y-%m-%d %H:%M:%S'),  # Convert datetime to string
-                "event_price": event[3]  # Convert Decimal to float
+                "event_price": float(event[3]),  # Convert Decimal to float
+                "displayPic": event[4]  # Include displayPic in the response
             } for event in event_data]
 
             return events
@@ -97,6 +102,7 @@ def listEvents():
     else:
         print("Failed to connect to the database for events")
         return []
+
     
 # API route to get all events
 @app.route('/api/events/homepage', methods=['GET'])
@@ -162,7 +168,38 @@ def addUsername(userEmail):
         if connection:
             connection.close()  # Always close the connection
 
+db_manager = dbMgr(get_connection)
+@app.route('/api/search/<string:searchTerm>', methods=['GET'])
+def search(searchTerm):
+    results = dbMgr.search_events(searchTerm)
+    return jsonify(results)
 
+@app.route('/register', methods=['POST'])
+def register():
+    if request.method == 'OPTIONS':
+        return '', 200  # Respond with a 200 status for the OPTIONS request
+    data = request.get_json()  # Get the JSON payload from the request
+    event_id = data.get('event_id')
+    user_id = data.get('user_id')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+
+    if not event_id or not user_id:
+        return jsonify({"error": "event_id and user_id are required"}), 400
+
+    # Check if the event already has an attendees list; if not, initialize it as an empty set
+    if event_id not in attendees_db:
+        attendees_db[event_id] = set()
+
+    # Check if the user is already registered
+    if user_id in attendees_db[event_id]:
+        return jsonify({"error": f"User {user_id} is already registered for event {event_id}."}), 400
+
+    # Add the user_id to the event's attendees list
+    attendees_db[event_id].add(user_id)
+
+    # Return a confirmation message
+    return jsonify({"message": f"User {first_name} {last_name} registered successfully for event {event_id}."})
 
 # # API route to load profile info
 # @app.route('/api/user/profile/<string:userEmail>', methods=['GET'])
@@ -255,13 +292,6 @@ def get_user_info():
     if 'user_info' in session:
         return jsonify(session['user_info'])
     return jsonify({"error": "No user is logged in"}), 401
-
-db_manager = dbMgr(get_connection)
-@app.route('/api/search/<string:searchTerm>', methods=['GET'])
-def search(searchTerm):
-    results = dbMgr.search_events(searchTerm)
-    return jsonify(results)
-
 
 if __name__ == '__main__':
     app.run(debug=True)

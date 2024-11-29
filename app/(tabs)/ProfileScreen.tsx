@@ -10,6 +10,16 @@ type RootStackParamList = {
   SettingsScreen: undefined;
 };
 
+type EventAPIResponse = {
+  Name: string;
+  DateTime: string;
+  Price: string;
+  Audience: string;
+  Description: string;
+  Organizer: string;
+  Status: string;
+};
+
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'ProfileScreen'
@@ -23,9 +33,18 @@ type UserProfile = {
   following: string;
 };
 
+type Event = {
+  event_id: number; // Not present in the API response
+  event_name: string;
+  event_date: string;
+  event_price: number;
+  displayPic: string; // Not present in the API response
+};
+
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const [attendedEvents, setAttendedEvents] = useState<Event[]>([]); // State to store attended events
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -38,10 +57,10 @@ const ProfileScreen: React.FC = () => {
   }, [navigation]);
 
   useEffect(() => {
-    // Fetch user data from the API
+    // Fetch user profile data
     const fetchProfileData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/user/profile/john.doe@aucegypt.edu');
+        const response = await fetch('http://127.0.0.1:5000/api/user/profile/john.doe@aucegypt.edu');
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
@@ -58,7 +77,32 @@ const ProfileScreen: React.FC = () => {
       }
     };
 
+    // Fetch attended events data
+    const fetchAttendedEvents = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/api/user/events/john.doe@aucegypt.edu');
+        if (!response.ok) {
+          throw new Error('Failed to fetch attended events');
+        }
+        const data: EventAPIResponse[] = await response.json();
+    
+        const mappedEvents: Event[] = data.map((event, index) => ({
+          event_id: index, // Temporary unique identifier
+          event_name: event.Name, // Map Name to event_name
+          event_date: event.DateTime, // Map DateTime to event_date
+          event_price: parseFloat(event.Price), // Convert Price to number
+          displayPic: 'https://via.placeholder.com/150', // Placeholder for displayPic
+        }));
+    
+        console.log('Mapped Events:', mappedEvents); // Debugging
+        setAttendedEvents(mappedEvents);
+      } catch (error) {
+        console.error('Error fetching attended events:', error);
+      }
+    };       
+
     fetchProfileData();
+    fetchAttendedEvents();
   }, []);
 
   return (
@@ -92,27 +136,33 @@ const ProfileScreen: React.FC = () => {
         {/* Events Section */}
         <Text style={styles.sectionTitle}>Events attended</Text>
         <View style={styles.eventsContainer}>
-          <EventCard />
-          <EventCard />
-          <EventCard />
+          {attendedEvents.length > 0 ? (
+            attendedEvents.map((event, index) => (
+              <EventCard key={event.event_id || `event-${index}`} event={event} />
+            ))
+          ) : (
+            <Text style={styles.noEventsText}>No events attended yet.</Text>
+          )}
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const EventCard: React.FC = () => {
+const EventCard: React.FC<{ event: Event }> = ({ event }) => {
   return (
     <View style={styles.eventCard}>
       <Image 
-        source={{ uri: 'https://via.placeholder.com/150' }}
+        source={{ uri: event.displayPic }}
         style={styles.eventImage}
       />
       <View style={styles.eventDetails}>
-        <Text style={styles.eventTitle}>Event Title</Text>
-        <Text style={styles.eventDate}>1 November 2024</Text>
-        <Text style={styles.eventTime}>9:00 am - 11:00 am</Text>
-        <Text style={styles.eventPrice}>165 EGP</Text>
+        <Text style={styles.eventTitle}>{event.event_name}</Text>
+        <Text style={styles.eventDate}>{new Date(event.event_date).toLocaleDateString()}</Text>
+        <Text style={styles.eventPrice}>
+          {event.event_price > 0 ? `${event.event_price} EGP` : 'Free'}
+        </Text>
       </View>
     </View>
   );
@@ -195,11 +245,14 @@ const styles = StyleSheet.create({
   eventDate: {
     color: '#390000',
   },
-  eventTime: {
-    color: '#390000',
-  },
   eventPrice: {
     color: '#390000',
+  },
+  noEventsText: {
+    textAlign: 'center',
+    color: '#390000',
+    marginTop: 20,
+    fontSize: 16,
   },
 });
 
