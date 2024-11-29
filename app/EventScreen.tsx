@@ -10,12 +10,30 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as Calendar from 'expo-calendar';
 
 const EventScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const navigation = useNavigation();
+
+  // Customize the header back button
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity style={styles.customBackButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#FFF" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      ),
+      headerTitle: 'Event Details', // Set custom title
+      headerStyle: {
+        backgroundColor: '#F5F1E3', // Light beige background for the header
+      },
+      headerTintColor: '#6B3B24', // Ensure other icons/text in the header match your brown palette
+    });
+  }, [navigation]);
 
   // Helper function to safely get the first string from string | string[]
   const getStringValue = (value: string | string[] | undefined): string | undefined => {
@@ -153,8 +171,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F1E3',
+  },customBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6B3B24', // Brown background for the back button
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginLeft: 1, // Adjust this value to move the button closer to the left
   },
-  topRightIcon: {
+  backButtonText: {
+    color: '#FFF', // Text color for back button
+    fontSize: 16,
+    marginLeft: 8,
+  }, topRightIcon: {
     position: 'absolute',
     top: 20,
     right: 20,
