@@ -54,33 +54,24 @@ def load_user_events(userEmail):
 
 # Retrieves all events from db 
 def listEvents():
-    # Establish a database connection
-    connection = get_connection()  # Assuming get_connection() returns a valid connection object
-    
+    connection = get_connection()
     if connection:
         try:
-            cursor = connection.cursor()  # Create a cursor object to interact with the database
+            cursor = connection.cursor()
+            sql_query = """
+                SELECT event_id, eventName, DatenTime, Price, displayPic, eventDesc
+                FROM appEvents
+            """
+            cursor.execute(sql_query)
+            event_data = cursor.fetchall()
 
-            # SQL query to fetch all events, including the displayPic column
-            sql_query = """SELECT event_id, eventName, DatenTime, Price, displayPic FROM appEvents"""
-            cursor.execute(sql_query)  # Execute the query
-            event_data = cursor.fetchall()  # Fetch all the events from the database 
-
-            # Check if event_data is empty (i.e., no events returned)
-            if not event_data:
-                print("No events found in the database.")
-                return []
-
-            # Print the fetched data for debugging
-            print("Fetched event data:", event_data)
-
-            # If events are found, return them in a list of dictionaries
             events = [{
                 "event_id": event[0],
-                "event_name": event[1],
-                "event_date": event[2].strftime('%Y-%m-%d %H:%M:%S'),  # Convert datetime to string
-                "event_price": float(event[3]),  # Convert Decimal to float
-                "displayPic": event[4]  # Include displayPic in the response
+                "eventName": event[1],
+                "DatenTime": event[2].strftime('%Y-%m-%d %H:%M:%S'),
+                "Price": float(event[3]),
+                "displayPic": event[4],
+                "eventDesc": event[5],  # Include eventDesc
             } for event in event_data]
 
             return events
@@ -89,19 +80,42 @@ def listEvents():
             return []
         finally:
             cursor.close()
-            connection.close()  # Always close the connection after the operation is complete
+            connection.close()
     else:
-        print("Failed to connect to the database for events")
+        print("Failed to connect to the database")
         return []
 
 # API route to get all events
 @app.route('/api/events/homepage', methods=['GET'])
 def get_events():
-    # Call the standalone function to fetch events
-    events = listEvents()
+    connection = get_connection()  # Assuming you have a function to establish the database connection
+    if connection:
+        try:
+            cursor = connection.cursor()
+            sql_query = """
+                SELECT event_id, eventName, DatenTime, Price, displayPic, eventDesc
+                FROM appEvents
+            """  # Ensure eventDesc is included in the SELECT statement
+            cursor.execute(sql_query)
+            events = cursor.fetchall()
+            results = [{
+                "event_id": event[0],
+                "event_name": event[1],
+                "event_date": event[2].strftime('%Y-%m-%d %H:%M:%S'),
+                "event_price": float(event[3]),
+                "displayPic": event[4],
+                "eventDesc": event[5],  # Include eventDesc
+            } for event in events]
+            return jsonify(results)
+        except Exception as e:
+            print(f"Error fetching events: {e}")
+            return jsonify({"error": "Failed to fetch events"}), 500
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        return jsonify({"error": "Database connection failed"}), 500
 
-    # Return the events as a JSON response
-    return jsonify(events)
 
 # Return info for specific event
 @app.route('/api/events/specificEvent/<int:event_id>', methods=['GET'])

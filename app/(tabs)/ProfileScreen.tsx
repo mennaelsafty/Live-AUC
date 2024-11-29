@@ -11,14 +11,16 @@ type RootStackParamList = {
 };
 
 type EventAPIResponse = {
-  Name: string;
-  DateTime: string;
-  Price: string;
   Audience: string;
+  DateTime: string;
   Description: string;
+  Name: string;
   Organizer: string;
+  Price: string; // Note this is a string in the API response
   Status: string;
+  displayPic: string;
 };
+
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -81,25 +83,28 @@ const ProfileScreen: React.FC = () => {
     const fetchAttendedEvents = async () => {
       try {
         const response = await fetch('http://127.0.0.1:5000/api/user/events/john.doe@aucegypt.edu');
+        const data: EventAPIResponse[] = await response.json();
+    
+        console.log('API Response for Attended Events:', data); // Debug API response
+    
         if (!response.ok) {
           throw new Error('Failed to fetch attended events');
         }
-        const data: EventAPIResponse[] = await response.json();
     
         const mappedEvents: Event[] = data.map((event, index) => ({
-          event_id: index, // Temporary unique identifier
-          event_name: event.Name, // Map Name to event_name
-          event_date: event.DateTime, // Map DateTime to event_date
+          event_id: index,
+          event_name: event.Name,
+          event_date: event.DateTime,
           event_price: parseFloat(event.Price), // Convert Price to number
-          displayPic: 'https://via.placeholder.com/150', // Placeholder for displayPic
+          displayPic: event.displayPic || 'https://via.placeholder.com/150', // Fallback for missing images
         }));
     
-        console.log('Mapped Events:', mappedEvents); // Debugging
+        console.log('Mapped Events:', mappedEvents); // Debug mapped events
         setAttendedEvents(mappedEvents);
       } catch (error) {
         console.error('Error fetching attended events:', error);
       }
-    };       
+    };    
 
     fetchProfileData();
     fetchAttendedEvents();
@@ -150,23 +155,24 @@ const ProfileScreen: React.FC = () => {
   );
 };
 
-const EventCard: React.FC<{ event: Event }> = ({ event }) => {
-  return (
-    <View style={styles.eventCard}>
-      <Image 
-        source={{ uri: event.displayPic }}
-        style={styles.eventImage}
-      />
-      <View style={styles.eventDetails}>
-        <Text style={styles.eventTitle}>{event.event_name}</Text>
-        <Text style={styles.eventDate}>{new Date(event.event_date).toLocaleDateString()}</Text>
-        <Text style={styles.eventPrice}>
-          {event.event_price > 0 ? `${event.event_price} EGP` : 'Free'}
-        </Text>
-      </View>
+const EventCard: React.FC<{ event: Event }> = ({ event }) => (
+  <View style={styles.eventCard}>
+    <Image source={{ uri: event.displayPic }} style={styles.eventImage} />
+    <View style={styles.eventDetails}>
+      <Text style={styles.eventTitle}>{event.event_name}</Text>
+      <Text style={styles.eventDate}>
+        {new Date(event.event_date).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </Text>
+      <Text style={styles.eventPrice}>
+        {event.event_price > 0 ? `${event.event_price} EGP` : 'Free'}
+      </Text>
     </View>
-  );
-};
+  </View>
+);
 
 // Style definitions remain the same as provided earlier
 const styles = StyleSheet.create({
