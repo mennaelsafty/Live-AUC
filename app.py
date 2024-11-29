@@ -9,12 +9,6 @@ from oauthlib.oauth2 import WebApplicationClient
 import requests
 import os
 
-# 'host': 'bkuitdpmiddscdp4bt05-mysql.services.clever-cloud.com',
-#     'database': 'bkuitdpmiddscdp4bt05',
-#     'user': 'uauhuir1bdzbqxy1',
-#     'password': 'm4vFPm9LNLuAf0ZpBHpr',
-#     'port': 3306
-
 app = Flask(__name__)
 CORS(app, supports_credentials=True)  # Enables credentials over CORS
 app.secret_key = os.urandom(24)
@@ -25,8 +19,6 @@ GOOGLE_CLIENT_SECRET = "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"
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
-
-# testfile = r"C:\Users\Haya\Desktop\Live@AUC\Live-AUC\test.txt"
 
 # API route to fetch profile info
 @app.route('/api/user/profile/<string:userEmail>', methods=['GET'])
@@ -42,7 +34,6 @@ def load_user_profile(userEmail):
 
     # Return the profile info
     return profile_info
-
 
 # API route to fetch attended events
 @app.route('/api/user/events/<string:userEmail>', methods=['GET'])
@@ -61,7 +52,7 @@ def load_user_events(userEmail):
         events.append(eventInfo)
     return jsonify(events)
 
-
+# Retrieves all events from db 
 def listEvents():
     connection = get_connection()
     if connection:
@@ -94,7 +85,6 @@ def listEvents():
         print("Failed to connect to the database")
         return []
 
-    
 # API route to get all events
 @app.route('/api/events/homepage', methods=['GET'])
 def get_events():
@@ -127,6 +117,7 @@ def get_events():
         return jsonify({"error": "Database connection failed"}), 500
 
 
+# Return info for specific event
 @app.route('/api/events/specificEvent/<int:event_id>', methods=['GET'])
 def load_event_details(event_id):
     # Create an instance of the Event class
@@ -141,6 +132,7 @@ def load_event_details(event_id):
     # Return the attended events as a JSON response
     return jsonify(eventInfo)
 
+# Return whether an event is paid or not (for FE navigation)
 @app.route('/api/events/paid/<int:event_id>', methods=['GET'])
 def checkPayment(event_id):
     # Create an instance of the Event class
@@ -155,39 +147,47 @@ def checkPayment(event_id):
     # Return the attended events as a JSON response
     return jsonify(paid)
 
-@app.route('/api/user/addUserName/<string:userEmail>', methods=['GET'])
-def addUsername(userEmail):
-    # Get the username from email (split on '@' to get the username)
-    userName = userEmail.split('@')[0]
+# Caller function to initiate first-time user in db 
+@app.route('/user/init/<string:userEmail>/<string:fName>/<string:lName>/<string:major>/<string:phoneNo>', methods=['PUT'])
+def newUser(userEmail, fName, lName, major, phoneNo):
+    # Create an instance of the Event class
+    student = Student(userEmail)
+
+    message, status_code = student.insertUserInfo(userEmail, fName, lName, major, phoneNo)
     
-    # Insert username into the database
-    sql_insert_query = """INSERT INTO users (userName) VALUES (%s)"""
-    data_to_insert = (userName,)
+    # Return the response with the appropriate message and status code
+    return jsonify({"message": message}), status_code
 
-    # Establish a database connection
-    connection = get_connection()  # Ensure get_connection() is properly defined
-    if not connection:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+# Caller function to return if user is logging in for the first time or not 
+@app.route('/user/isFirst/<string:userEmail>', methods=['GET'])
+def isFirst(userEmail):
+     # Create an instance of the Event class
+    student = Student(userEmail)
 
-    try:
-        cursor = connection.cursor()  # Create a cursor object
-        cursor.execute(sql_insert_query, data_to_insert)  # Execute the insert query
-        connection.commit()  # Commit the changes
-        return jsonify({"message": "Record inserted successfully"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-    finally:
-        if cursor:
-            cursor.close()  # Always close the cursor
-        if connection:
-            connection.close()  # Always close the connection
+    message = student.isFirstLog(userEmail)
+    
+    # Return the response with the appropriate message and status code
+    return jsonify({"message": message})
 
+# Caller function to update username for app settings     
+@app.route('/api/user/updateUserName/<string:userEmail>/<string:userName>', methods=['PUT'])
+def updateUsername(userEmail, userName):
+    # Create an instance of the Event class
+    student = Student(userEmail)
+
+    message, status_code = student.updateUsername(userName, userEmail)
+    
+    # Return the response with the appropriate message and status code
+    return jsonify({"message": message}), status_code
+
+# Caller function to return event search results 
 db_manager = dbMgr(get_connection)
 @app.route('/api/search/<string:searchTerm>', methods=['GET'])
 def search(searchTerm):
     results = db_manager.search_events(searchTerm)
     return jsonify(results)
 
+##################### Pls write what this function does 
 @app.route('/register', methods=['POST'])
 def register():
     if request.method == 'OPTIONS':
@@ -215,25 +215,7 @@ def register():
     # Return a confirmation message
     return jsonify({"message": f"User {first_name} {last_name} registered successfully for event {event_id}."})
 
-# # API route to load profile info
-# @app.route('/api/user/profile/<string:userEmail>', methods=['GET'])
-# def loadPInfo(userEmail):
-#     with open(testfile, 'r') as file:
-#         for line in file: 
-#             if userEmail == line.split(",")[0]:
-                
-#                 profile_info = {
-#                     "username": line.split(",")[1],
-#                     "pfp": line.split(",")[2],
-#                     "points": line.split(",")[3],
-#                     "friends": line.split(",")[4],
-#                     "following": line.split(",")[5]
-#                     # Add other profile-related fields here as needed
-#                 }
-
-#                 return jsonify(profile_info)
-
-# Store user info in a session
+##################### Pls write what this function does 
 @app.route('/login', methods=['GET'])
 def login():
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -246,6 +228,7 @@ def login():
     )
     return jsonify({"auth_url": request_uri})
 
+##################### Pls write what this function does 
 @app.route('/callback', methods=['GET'])
 def callback():
     try:
@@ -307,5 +290,6 @@ def get_user_info():
         return jsonify(session['user_info'])
     return jsonify({"error": "No user is logged in"}), 401
 
+# Run app 
 if __name__ == '__main__':
     app.run(debug=True)
