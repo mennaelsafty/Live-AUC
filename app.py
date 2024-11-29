@@ -290,6 +290,34 @@ def get_user_info():
         return jsonify(session['user_info'])
     return jsonify({"error": "No user is logged in"}), 401
 
+
+@app.route('/api/user/interests/<string:userEmail>', methods=['GET'])
+def get_user_interests_route(userEmail):
+   
+    try:
+        # Create an instance of the Student class
+        student = Student(userEmail)
+
+        # Call the get_user_interests method
+        tags = student.get_user_interests()
+
+        # Return the interests as a JSON response
+        if tags:
+            return jsonify({
+                "userEmail": userEmail,
+                "interests": tags
+            }), 200
+        else:
+            return jsonify({
+                "userEmail": userEmail,
+                "interests": [],
+                "message": "No interests found for this user."
+            }), 404
+    except Exception as e:
+        print(f"Error fetching interests for user {userEmail}: {e}")
+        return jsonify({"error": "An error occurred while fetching interests."}), 500
+
+
 # Run app 
 if __name__ == '__main__':
     app.run(debug=True)
