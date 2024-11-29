@@ -1,0 +1,43 @@
+
+const ReserveSlot = ({ event }) => {
+  const [slots, setSlots] = useState(event.slots); // Array of slot objects with availability info
+
+  const handleSlotReservation = (slotId) => {
+    const selectedSlot = slots.find((slot) => slot.id === slotId);
+
+    if (!selectedSlot) {
+      Alert.alert("Error", "Slot not found.");
+      return;
+    }
+
+    if (selectedSlot.isFullyBooked) {
+      Alert.alert("Slot Fully Booked", "This slot is fully booked. Please choose another slot.");
+    } else {
+      // Simulate a successful reservation
+      const updatedSlots = slots.map((slot) =>
+        slot.id === slotId ? { ...slot, isFullyBooked: true } : slot
+      );
+      setSlots(updatedSlots);
+
+      Alert.alert("Success", "You have successfully reserved this slot!");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.eventTitle}>{event.name}</Text>
+      {slots.map((slot) => (
+        <View key={slot.id} style={styles.slotContainer}>
+          <Text style={styles.slotText}>
+            {slot.time} - {slot.isFullyBooked ? "Fully Booked" : "Available"}
+          </Text>
+          <Button
+            title="Reserve"
+            onPress={() => handleSlotReservation(slot.id)}
+            disabled={slot.isFullyBooked}
+          />
+        </View>
+      ))}
+    </View>
+  );
+};
