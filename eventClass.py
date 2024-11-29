@@ -93,7 +93,25 @@ class Event:
         # In case event data is missing or not found
         return jsonify({"error": "Event not found"}), 404  # Optional error response with status code
     
+    
 
+    def checkAvail(self):
+        try:
+            # SQL query to fetch maxSeats and seatsFilled for the event
+            sql_query = "SELECT maxSeats, seatsFilled FROM appEvents WHERE event_id = %s"
+            self.cursor.execute(sql_query, (self.__eventID,))
+            result = self.cursor.fetchone()
+
+            if result:
+                max_seats, seats_filled = result  # Extract the values
+                return seats_filled < max_seats  # True if seats are available, False otherwise
+            else:
+                print("Event not found in database.")
+                return False  # No event data, assume no availability
+
+        except Exception as e:
+            print(f"Error checking availability: {e}")
+            return False  # In case of error, assume no availability
 
     # Returns true if the event is paid, false otherwise 
     def checkPay(self):

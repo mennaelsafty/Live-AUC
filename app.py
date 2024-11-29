@@ -283,6 +283,28 @@ def callback():
         print(f"Callback Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/event/<int:event_id>/check-availability', methods=['GET'])
+def check_event_availability(event_id):
+    try:
+        # Instantiate the Event object with the given event_id
+        event = Event(event_id)
+
+        # Call the checkAvail method to check seat availability
+        is_available = event.checkAvail()
+
+        # Close the database connection
+        event.close_connection()
+
+        # Return the result as JSON
+        return jsonify({
+            "event_id": event_id,
+            "seatsAvailable": is_available
+        })
+    except Exception as e:
+        print(f"Error in /check-availability: {e}")
+        return jsonify({"error": "An error occurred while checking availability"}), 500
+        
 # Endpoint for the React Native app to fetch user data
 @app.route('/user-info', methods=['GET'])
 def get_user_info():
