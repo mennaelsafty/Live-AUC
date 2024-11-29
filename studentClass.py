@@ -167,6 +167,60 @@ class Student:
     def AddComment(self):
         pass
 
+    def get_user_interests(self):
+        try:
+            if not self.cursor:
+                print("Database connection not established.")
+                return []
+
+            # Step 1: Get all event_ids for the user
+            event_ids_query = """
+            SELECT event_id 
+            FROM bkuitdpmiddscdp4bt05.Event_attendees 
+            WHERE userEmail = %s
+            """
+            self.cursor.execute(event_ids_query, (self.Email,))
+            event_ids = self.cursor.fetchall()  # Fetch all event_id rows
+
+            # Flatten the result into a list of event_ids
+            event_ids = [row[0] for row in event_ids]
+
+            # Initialize an empty list for tags
+            tags = []
+
+            # Step 2: Get all tags for the retrieved event_ids
+            if event_ids:
+                placeholders = ", ".join(["%s"] * len(event_ids))
+                tags_query = f"""
+                SELECT tag 
+                FROM bkuitdpmiddscdp4bt05.Event_categories 
+                WHERE event_id IN ({placeholders})
+                """
+                self.cursor.execute(tags_query, tuple(event_ids))  # Pass event_ids as a tuple
+                event_tags = self.cursor.fetchall()  # Fetch all tag rows
+                tags.extend([row[0] for row in event_tags])  # Add tags to the list
+
+            # Step 3: Get all interests directly from the Interests table
+            interests_query = """
+            SELECT interest 
+            FROM bkuitdpmiddscdp4bt05.Interest 
+            WHERE userEmail = %s
+            """
+            self.cursor.execute(interests_query, (self.Email,))
+            user_interests = self.cursor.fetchall()  # Fetch all interest rows
+            tags.extend([row[0] for row in user_interests])  # Add interests to the list
+
+            # Remove duplicates (if any) and return the combined list of tags and interests
+            return list(set(tags))
+        except Exception as e:
+            print(f"Error fetching interests for user {self.Email}: {e}")
+            return []
+        finally:
+            if self.cursor:
+                self.cursor.close()
+            if self.connection:
+                self.connection.close()
+                
     # Method to close the database connection when done
     def close_connection(self):
         if self.cursor:
