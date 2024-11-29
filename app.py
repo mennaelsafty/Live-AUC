@@ -171,7 +171,7 @@ def addUsername(userEmail):
 db_manager = dbMgr(get_connection)
 @app.route('/api/search/<string:searchTerm>', methods=['GET'])
 def search(searchTerm):
-    results = dbMgr.search_events(searchTerm)
+    results = db_manager.search_events(searchTerm)
     return jsonify(results)
 
 @app.route('/register', methods=['POST'])
