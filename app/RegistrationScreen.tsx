@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter, useSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function RegistrationScreen() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const router = useRouter();
-    const { event_id } = useSearchParams(); // Get the event_id from the params
+    const { event_id } = useLocalSearchParams();
 
     const handleRegister = async () => {
+        if (!event_id) {
+            Alert.alert('Error', 'Event ID is missing. Please try again.');
+            return;
+        }
+
         try {
-            // Make the API request to register the user
             const response = await fetch(`http://127.0.0.1:5000/api/user/register/${event_id}/${email}`, {
                 method: 'POST',
                 headers: {
@@ -22,13 +26,11 @@ export default function RegistrationScreen() {
             const result = await response.json();
 
             if (response.ok) {
-                // Navigate to the SuccessScreen with the success message
                 router.push({
                     pathname: '/SuccessScreen',
                     params: { message: result.message },
                 });
             } else {
-                // Show an alert with the error message
                 Alert.alert('Error', result.message || 'An error occurred');
             }
         } catch (error) {
@@ -76,14 +78,14 @@ export default function RegistrationScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F1E3', // Match app background color
+        backgroundColor: '#F5F1E3',
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
     },
     formContainer: {
         width: '100%',
-        maxWidth: 350, // Limit the width on larger screens
+        maxWidth: 350,
         marginBottom: 20,
         backgroundColor: '#fff',
         padding: 15,
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         marginBottom: 5,
-        color: '#390000', // Match app's text color
+        color: '#390000',
     },
     input: {
         height: 45,
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     button: {
-        backgroundColor: '#A73E26', // Match app's button color
+        backgroundColor: '#6B3B24',
         padding: 15,
         borderRadius: 8,
         alignItems: 'center',
