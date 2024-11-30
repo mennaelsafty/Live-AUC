@@ -1,0 +1,60 @@
+const ChooseInterests = ({ navigation }) => {
+  // List of event categories
+  const eventCategories = [
+    { id: "1", name: "Workshops" },
+    { id: "2", name: "Sports Events" },
+    { id: "3", name: "Cultural Events" },
+    { id: "4", name: "Tech Talks" },
+    { id: "5", name: "Music Concerts" },
+    { id: "6", name: "Career Fairs" },
+  ];
+
+  const [selectedInterests, setSelectedInterests] = useState([]);
+
+  const toggleInterest = (id) => {
+    if (selectedInterests.includes(id)) {
+      setSelectedInterests(selectedInterests.filter((interestId) => interestId !== id));
+    } else {
+      setSelectedInterests([...selectedInterests, id]);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (selectedInterests.length === 0) {
+      Alert.alert("Error", "Please select at least one interest.");
+      return;
+    }
+
+    Alert.alert("Success", "Your preferences have been saved!");
+
+    navigation.navigate("EventFeed", { interests: selectedInterests });
+  };
+
+  const renderCategory = ({ item }) => {
+    const isSelected = selectedInterests.includes(item.id);
+    return (
+      <TouchableOpacity
+        style={[styles.categoryItem, isSelected && styles.selectedCategory]}
+        onPress={() => toggleInterest(item.id)}
+      >
+        <Text style={[styles.categoryText, isSelected && styles.selectedText]}>
+          {item.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Choose Your Interests</Text>
+      <FlatList
+        data={eventCategories}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCategory}
+        style={styles.list}
+      />
+      <Button title="Save Preferences" onPress={handleSubmit} />
+    </View>
+  );
+}; 
+export default ChooseInterests;
